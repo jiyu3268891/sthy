@@ -14,8 +14,7 @@ elif [ -z "$ENV_HOME" ];then
 			ENV_HOME=`cd "$PRGDIR"/ ;pwd`
 		fi
 		echo $ENV_HOME
-        . "$ENV_HOME"/bin/setEnv.sh flag
-	MARK="gf"
+        . "$ENV_HOME"/bin/setEnv4ver.sh
 fi
 # Default Values
 UNAME=`whoami`
@@ -23,7 +22,9 @@ CI_NAME=$1
 ALIAS_NAME=$2
 java_low_ver=1.8.0
 gfsh_low_ver=8.2.0
-adf_low_ver=0.1.0.M1
+adf_low_ver=0.2.0
+zk_home=/apps/adf/zookeeper-3.4.6
+zk_low_ver=3.4.0
 hnofile=72000
 snofile=72000
 hnproc=72000
@@ -33,7 +34,7 @@ passina="never"
 accountexp="never"
 passmin=0
 passmax=99999
-springxd_low_ver=1.3.1
+springxd_low_ver=1.3.0
 PASSTXT="\033[0m\033[32mPASS\033[0m"
 FAILTXT="\033[0m\033[31mFAIL\033[0m"
 #PASSTXT="PASS"
@@ -56,6 +57,7 @@ else
 	echo -e "==>$PASSTXT (version $java_low_ver or greater) "
 fi
 echo ""
+
 if [ "$MARK" = "gf" ]; then
 	echo "### Test 1 - Step 2 ###"
 	gfsh_cur_ver=`$GEMFIRE/bin/gfsh version`
@@ -77,15 +79,25 @@ if [ "$MARK" = "gf" ]; then
 	fi
 elif [ "$MARK" = "xd" ]; then
 	echo "### Test 1 - Step 2 ###"
-	cd $3/xd/bin
-	./xd-admin > tempxdver 2>&1
-	springxd_cur_ver=`cat tempxdver | grep eX | cut -d' ' -f1`
+	cd $3/shell/bin
+	./xd-shell version > tempxdver 2>&1
+	springxd_cur_ver=`cat tempxdver | grep INFO | cut -d: -f2 | sed 's/^[ \t]*//g'`
 	rm -rf tempxdver
 	echo "springxd version: $springxd_cur_ver"
 	if [ "$springxd_low_ver" \> "$springxd_cur_ver" ] ;then
-		echo -e "==>$FAILTXT (version $springxd_cur_ver or greater) "
+		echo -e "==>$FAILTXT (version $springxd_low_ver or greater) "
 	else
-		echo -e "==>$PASSTXT (version $springxd_cur_ver or greater) "
+		echo -e "==>$PASSTXT (version $springxd_low_ver or greater) "
+	fi
+        echo ""
+	echo "### Test 1 -  Step 3 ### "
+	zk_core=`ls $zk_home | grep zookeeper |grep -n 'jar$'`
+	zk_cur_ver=`echo $zk_core | cut -d- -f2 | cut -d. -f1-3`
+	echo "Zookeeper version: $zk_cur_ver"
+	if [ "$zk_low_ver" \> "$zk_cur_ver" ] ;then
+		echo -e "==>$FAILTXT (version $zk_low_ver or greater) "
+	else
+		echo -e "==>$PASSTXT (version $zk_low_ver or greater) "
 	fi
 fi
 echo ""
